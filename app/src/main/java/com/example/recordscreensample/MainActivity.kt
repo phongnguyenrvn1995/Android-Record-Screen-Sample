@@ -2,12 +2,17 @@ package com.example.recordscreensample
 
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.media.projection.MediaProjectionManager
+import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.view.View
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 
@@ -25,6 +30,47 @@ class MainActivity : AppCompatActivity() {
             insets
         }
 //        openNotificationSettings(this)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        checkNotificationPermission()
+    }
+
+    private fun checkNotificationPermission() {
+        // Check if the notification permission is granted (Android 13+)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    POST_NOTIFICATIONS
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
+                // Permission is already granted
+            } else if (ActivityCompat.shouldShowRequestPermissionRationale(
+                    this,
+                    POST_NOTIFICATIONS
+                )
+            ) {
+                // Show rationale and request permission
+                requestPermissionLauncher.launch(POST_NOTIFICATIONS)
+            } else {
+                // Directly request for required permission
+                requestPermissionLauncher.launch(POST_NOTIFICATIONS)
+            }
+        }
+    }
+
+    // Define the request code
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            // Permission is granted. Continue with the action or workflow
+        } else {
+            // Explain to the user that the feature is unavailable because the
+            // features require a permission that the user has denied
+            finish()
+        }
     }
 
     fun openNotificationSettings(context: Context) {
@@ -51,6 +97,7 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val REQUEST_CODE = 1000
+        private const val POST_NOTIFICATIONS = "android.permission.POST_NOTIFICATIONS"
     }
 
     fun start(view: View) {
