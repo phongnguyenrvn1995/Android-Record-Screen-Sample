@@ -7,7 +7,6 @@ import android.media.projection.MediaProjectionManager
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
-import android.util.Log
 import android.view.View
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -17,7 +16,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 
-class MainActivity : AppCompatActivity() {
+class MainActivity2 : AppCompatActivity() {
 
 
     private lateinit var mediaProjectionManager: MediaProjectionManager
@@ -86,7 +85,7 @@ class MainActivity : AppCompatActivity() {
 
         if (requestCode == REQUEST_CODE && resultCode == RESULT_OK) {
             // Khởi động ScreenRecordService với các tham số cần thiết
-            val serviceIntent = Intent(this, ScreenRecordService::class.java)
+            val serviceIntent = Intent(this, ScreenRecordService2::class.java)
             serviceIntent.putExtra("RESULT_CODE", resultCode)
             serviceIntent.putExtra("DATA", data)
             startService(serviceIntent)
@@ -112,8 +111,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun stop(view: View) {
-        val stopIntent = Intent(this, ScreenRecordService::class.java)
-        stopIntent.action = ScreenRecordService.ACTION_STOP
+        val stopIntent = Intent(this, ScreenRecordService2::class.java)
+        stopIntent.action = ScreenRecordService2.ACTION_STOP
         startService(stopIntent)
     }
 
