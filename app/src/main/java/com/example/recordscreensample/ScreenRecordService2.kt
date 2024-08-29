@@ -104,6 +104,12 @@ class ScreenRecordService2 : Service() {
                 info: MediaCodec.BufferInfo
             ) {
                 val outputBuffer = codec.getOutputBuffer(index)
+                // Check if codec config is present
+                if ((info.flags and MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) {
+                    // Codec config data is in this buffer, do not write it to muxer
+                    info.size = 0
+                }
+
                 if (outputBuffer != null && info.size > 0) {
                     // Ghi dữ liệu vào file thông qua MediaMuxer
                     videoRecorder?.writeSampleData(outputBuffer, info)
@@ -126,6 +132,9 @@ class ScreenRecordService2 : Service() {
 
             override fun onOutputFormatChanged(p0: MediaCodec, p1: MediaFormat) {
                 Log.d(TAG, "onOutputFormatChanged: ")
+
+                // Add video track with the new format
+                videoRecorder?.addVideoTrack(p1)
             }
         })
 
@@ -134,11 +143,13 @@ class ScreenRecordService2 : Service() {
     }
 
     fun getOutputFilePath(): String {
-        outputFilePath = "${externalCacheDir?.absolutePath}/screen_record.mp4"
+        outputFilePath = "${externalCacheDir?.absolutePath}/screen_record_frames.mp4"
         return outputFilePath
     }
 
     private fun setupMediaCodec(): Surface {
+        videoRecorder = VideoRecorder()
+        videoRecorder?.startRecording(outputFilePath)
         val width = getScreenResolution().first
         val height = getScreenResolution().second
         val format = MediaFormat.createVideoFormat(MediaFormat.MIMETYPE_VIDEO_AVC, width, height)
@@ -152,9 +163,7 @@ class ScreenRecordService2 : Service() {
 
         mediaCodec = MediaCodec.createEncoderByType(MediaFormat.MIMETYPE_VIDEO_AVC)
         mediaCodec.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE)
-        videoRecorder = VideoRecorder()
-        videoRecorder?.startRecording(outputFilePath)
-        videoRecorder?.addVideoTrack(format)
+//        videoRecorder?.addVideoTrack(format)
 
         // Ensure that createInputSurface() is called after configure()
         val inputSurface = mediaCodec.createInputSurface()
