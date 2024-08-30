@@ -44,6 +44,13 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".MonitorActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
@@ -70,6 +77,16 @@
         </service>
         <service
             android:name=".ScreenRecordService3"
+            android:foregroundServiceType="mediaProjection"
+            android:permission="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.example.recordscreensample.ACTION_START" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </service>
+        <service
+            android:name=".MonitorService"
             android:foregroundServiceType="mediaProjection"
             android:permission="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION"
             android:exported="false">
