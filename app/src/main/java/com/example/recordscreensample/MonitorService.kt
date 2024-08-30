@@ -24,8 +24,6 @@ import androidx.core.app.NotificationCompat
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
-import java.io.File
-import java.io.FileOutputStream
 import java.io.IOException
 import java.net.DatagramPacket
 import java.net.DatagramSocket
@@ -151,11 +149,11 @@ class MonitorService : Service() {
     }
 
     private fun saveBitmapToFile(bitmap: Bitmap) {
-        val file = File(externalCacheDir, "screen_record${System.currentTimeMillis()}.jpg")
+//        val file = File(externalCacheDir, "screen_record${System.currentTimeMillis()}.jpg")
         try {
-            FileOutputStream(file).use { outputStream ->
-                bitmap.compress(Bitmap.CompressFormat.JPEG, quality, outputStream)
-            }
+//            FileOutputStream(file).use { outputStream ->
+//                bitmap.compress(Bitmap.CompressFormat.JPEG, quality, outputStream)
+//            }
             sendData2Server(convertBitmapToByteArray(bitmap))
 
         } catch (e: IOException) {
