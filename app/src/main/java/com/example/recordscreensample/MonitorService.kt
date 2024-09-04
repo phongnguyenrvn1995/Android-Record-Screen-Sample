@@ -28,6 +28,7 @@ import java.io.IOException
 import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetAddress
+import kotlin.math.ceil
 
 
 class MonitorService : Service() {
@@ -260,24 +261,33 @@ class MonitorService : Service() {
 
         var isSendingData = false
         fun sendData2Server(sendData: ByteArray) = GlobalScope.launch {
-            Log.d(TAG, "sendData2Server: ${sendData.size}")
             if (isSendingData) return@launch
             isSendingData = true
-            _sendData2Server("==IMAGE START==".toByteArray())
-            val size = 10 * 1024
+            val timeStamp = System.currentTimeMillis()
+            val size = 60 * 1024
+            val totalBlock = (ceil((sendData.size.toDouble()/size))).toInt()
             var idx = 0
+            Log.d(TAG, "sendData2Server: timeStamp ${timeStamp}")
+            Log.d(TAG, "sendData2Server: ${sendData.size}")
+            Log.d(TAG, "sendData2Server total block: $totalBlock")
+
+            _sendData2Server("==IMAGE START==|$timeStamp|$totalBlock".toByteArray())
             while (idx < sendData.size) {
                 var expectSize = size
                 if (idx + size > sendData.size) {
                     expectSize = sendData.size - idx
                 }
-                val expectBuff = ByteArray(expectSize)
-                System.arraycopy(sendData, idx, expectBuff, 0, expectSize)
+
+                val header = "$timeStamp|$idx|$expectSize|".toByteArray()
+                val expectBuff = ByteArray(expectSize + header.size)
+                System.arraycopy(header, 0, expectBuff, 0, header.size)
+
+                System.arraycopy(sendData, idx, expectBuff, header.size, expectSize)
                 _sendData2Server(expectBuff)
 
                 idx += expectSize
             }
-            _sendData2Server("==IMAGE END==".toByteArray())
+            _sendData2Server("==IMAGE END==|$timeStamp".toByteArray())
             isSendingData = false
         }
 
