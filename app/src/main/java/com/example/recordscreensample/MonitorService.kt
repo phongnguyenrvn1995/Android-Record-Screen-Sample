@@ -23,11 +23,14 @@ import android.view.WindowManager
 import androidx.core.app.NotificationCompat
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import java.io.BufferedInputStream
+import java.io.BufferedOutputStream
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetAddress
+import java.net.Socket
 import kotlin.math.ceil
 
 
@@ -258,9 +261,51 @@ class MonitorService : Service() {
         var remoteIP = ""
         var remotePort = 9876
         var quality = 1
+        var isUDP = true
 
         var isSendingData = false
+        var socket: Socket? = null
+
+        var os: BufferedOutputStream? = null
+        var `is`: BufferedInputStream? = null
+
         fun sendData2Server(sendData: ByteArray) = GlobalScope.launch {
+            if (isUDP)
+                sendUDPData2Server(sendData)
+            else
+                sendTCPData2Server(sendData)
+        }
+
+        private fun sendTCPData2Server(sendData: ByteArray) = GlobalScope.launch {
+            if (isSendingData) return@launch
+            isSendingData = true
+
+            try {
+                if (socket == null || socket?.isConnected == false) {
+                    Log.d(TAG, "sendTCPData2Server: Init socket")
+                    socket = Socket(remoteIP, remotePort)
+                    os = BufferedOutputStream(socket?.getOutputStream())
+                    `is` = BufferedInputStream(socket?.getInputStream())
+                }
+                Log.d(TAG, "sendTCPData2Server: Connected")
+
+                val buffer = ByteArray(sendData.size + 15 /*==IMAGE START==*/ + 13 /*==IMAGE END==*/)
+                System.arraycopy("==IMAGE START==".toByteArray(), 0, buffer, 0, 15)
+                System.arraycopy(sendData, 0, buffer, 15, sendData.size)
+                System.arraycopy("==IMAGE END==".toByteArray(), 0, buffer, 15 + sendData.size, 13)
+
+                os?.write(buffer)
+                os?.flush()
+            } catch (ex: Exception) {
+                ex.printStackTrace()
+                socket?.close()
+                socket = null
+            }
+
+            isSendingData = false
+        }
+
+        fun sendUDPData2Server(sendData: ByteArray) = GlobalScope.launch {
             if (isSendingData) return@launch
             isSendingData = true
             val timeStamp = System.currentTimeMillis()
@@ -271,7 +316,7 @@ class MonitorService : Service() {
             Log.d(TAG, "sendData2Server: ${sendData.size}")
             Log.d(TAG, "sendData2Server total block: $totalBlock")
 
-            _sendData2Server("==IMAGE START==|$timeStamp|$totalBlock".toByteArray())
+            _sendUDPData2Server("==IMAGE START==|$timeStamp|$totalBlock".toByteArray())
             while (idx < sendData.size) {
                 var expectSize = size
                 if (idx + size > sendData.size) {
@@ -283,15 +328,15 @@ class MonitorService : Service() {
                 System.arraycopy(header, 0, expectBuff, 0, header.size)
 
                 System.arraycopy(sendData, idx, expectBuff, header.size, expectSize)
-                _sendData2Server(expectBuff)
+                _sendUDPData2Server(expectBuff)
 
                 idx += expectSize
             }
-            _sendData2Server("==IMAGE END==|$timeStamp".toByteArray())
+            _sendUDPData2Server("==IMAGE END==|$timeStamp".toByteArray())
             isSendingData = false
         }
 
-        fun _sendData2Server(sendData: ByteArray) {
+        fun _sendUDPData2Server(sendData: ByteArray) {
             try {
                 // Tạo socket client
                 val clientSocket = DatagramSocket()

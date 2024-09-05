@@ -9,7 +9,10 @@ import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
 import android.view.View
+import android.widget.Button
 import android.widget.EditText
+import android.widget.RadioButton
+import android.widget.RadioGroup
 import android.widget.SeekBar
 import android.widget.SeekBar.OnSeekBarChangeListener
 import androidx.activity.enableEdgeToEdge
@@ -25,6 +28,11 @@ class MonitorActivity : AppCompatActivity() {
     private lateinit var remote_ip: EditText
     private lateinit var remote_port: EditText
     private lateinit var quality: SeekBar
+    private lateinit var r_group: RadioGroup
+    private lateinit var r_btn_udp: RadioButton
+    private lateinit var r_btn_tcp: RadioButton
+    private lateinit var btn_start: Button
+    private lateinit var btn_stop: Button
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -33,6 +41,11 @@ class MonitorActivity : AppCompatActivity() {
         remote_ip = findViewById(R.id.remote_ip)
         remote_port = findViewById(R.id.remote_port)
         quality = findViewById(R.id.quality)
+        r_group = findViewById(R.id.r_group)
+        r_btn_udp = findViewById(R.id.r_btn_udp)
+        r_btn_tcp = findViewById(R.id.r_btn_tcp)
+        btn_start = findViewById(R.id.btn_start)
+        btn_stop = findViewById(R.id.btn_stop)
         quality.setOnSeekBarChangeListener(object : OnSeekBarChangeListener {
             override fun onProgressChanged(p0: SeekBar?, p1: Int, p2: Boolean) {
                 Log.d("MainActivity3", "onProgressChanged: $p1 $p2")
@@ -53,6 +66,9 @@ class MonitorActivity : AppCompatActivity() {
         }
 //        openNotificationSettings(this)
     }
+
+    private fun isUDP() =
+        r_group.checkedRadioButtonId == R.id.r_btn_udp
 
     override fun onResume() {
         super.onResume()
@@ -123,8 +139,16 @@ class MonitorActivity : AppCompatActivity() {
     }
 
     fun start(view: View) {
+        remote_ip.isEnabled = false
+        remote_port.isEnabled = false
+        r_btn_tcp.isEnabled = false
+        r_btn_udp.isEnabled = false
+        btn_start.isEnabled = false
+        btn_stop.isEnabled = true
+
         MonitorService.remoteIP = remote_ip.text.toString()
         MonitorService.remotePort = remote_port.text.toString().toInt()
+        MonitorService.isUDP = isUDP()
         // Khởi tạo MediaProjectionManager
         mediaProjectionManager =
             getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
@@ -135,6 +159,13 @@ class MonitorActivity : AppCompatActivity() {
     }
 
     fun stop(view: View) {
+        remote_ip.isEnabled = true
+        remote_port.isEnabled = true
+        r_btn_tcp.isEnabled = true
+        r_btn_udp.isEnabled = true
+        btn_start.isEnabled = true
+        btn_stop.isEnabled = false
+
         val stopIntent = Intent(this, MonitorService::class.java)
         stopIntent.action = MonitorService.ACTION_STOP
         startService(stopIntent)
